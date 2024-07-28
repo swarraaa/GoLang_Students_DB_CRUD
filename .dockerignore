@@ -1,0 +1,9 @@
+# Ignore the .env file
+.env
+/repository/.env
+
+# You can also ignore other unnecessary files
+.git
+.gitignore
+node_modules
+dist
