@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -17,16 +16,17 @@ import (
 var mongoClient *mongo.Client
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// Check if MONGO_URI is set
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("MONGO_URI is not set")
 	}
-	log.Println("Loaded .env file")
 
-	// Initialize the mongoClient properly
-	mongoClient, err = mongo.Connect(context.Background(), options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	// Connect to MongoDB
+	var err error
+	mongoClient, err = mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		log.Fatal("Connection error: ", err)
+		log.Fatal("Connection error: ", err, mongoURI)
 	}
 	err = mongoClient.Ping(context.Background(), readpref.Primary())
 	if err != nil {
@@ -43,7 +43,18 @@ func main() {
 		}
 	}()
 
-	coll := mongoClient.Database(os.Getenv("DB_NAME")).Collection(os.Getenv("COLLECTION_NAME"))
+	// Check if DB_NAME and COLLECTION_NAME are set
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		log.Fatal("DB_NAME is not set")
+	}
+
+	collectionName := os.Getenv("COLLECTION_NAME")
+	if collectionName == "" {
+		log.Fatal("COLLECTION_NAME is not set")
+	}
+
+	coll := mongoClient.Database(dbName).Collection(collectionName)
 
 	// Create student service
 	studService := usecase.StudentService{MongoCollection: coll}
